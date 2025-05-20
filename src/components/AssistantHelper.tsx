@@ -5,10 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
+import { CLAUDE_API_KEY, setClaudeApiKey } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const AssistantHelper = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentTip, setCurrentTip] = useState(0);
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [apiKey, setApiKey] = useState(CLAUDE_API_KEY);
   const location = useLocation();
   
   // Tips based on the current route
@@ -66,13 +72,15 @@ const AssistantHelper = () => {
   };
   
   const handleConnectToServer = () => {
-    toast.info("To connect to Claude, update the API URL in Settings with your MCP Server URL", {
-      description: "Make sure your server is running and API keys are configured",
-      duration: 5000,
-      action: {
-        label: "Learn More",
-        onClick: () => window.open("https://github.com/IntegratedRai444", "_blank")
-      }
+    setShowApiKeyDialog(true);
+  };
+  
+  const handleSaveApiKey = () => {
+    setClaudeApiKey(apiKey);
+    setShowApiKeyDialog(false);
+    toast.success("Claude API Key saved successfully!", {
+      description: "Your API key has been saved and will be used for all agent interactions",
+      duration: 5000
     });
   };
   
@@ -125,6 +133,40 @@ const AssistantHelper = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect to Claude</DialogTitle>
+            <DialogDescription>
+              Enter your Anthropic Claude API key to use with your agents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="apiKey">Claude API Key</Label>
+              <Input
+                id="apiKey"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-ant-api03-..."
+                type="password"
+              />
+              <p className="text-xs text-gray-500">
+                Your API key is stored locally in your browser and is only sent to the MCP server.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveApiKey}>
+              Save API Key
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

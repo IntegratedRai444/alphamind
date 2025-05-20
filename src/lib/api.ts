@@ -1,10 +1,15 @@
-
 import { Agent, AgentMemory, CreateAgentRequest, TaskRequest, TaskResponse, VoiceResponse } from "@/types/agent";
 
 export const API_BASE_URL = localStorage.getItem("mcpApiUrl") || "http://localhost:8000";
+export const CLAUDE_API_KEY = localStorage.getItem("claudeApiKey") || "";
 
 export const setApiBaseUrl = (url: string) => {
   localStorage.setItem("mcpApiUrl", url);
+  window.location.reload();
+};
+
+export const setClaudeApiKey = (key: string) => {
+  localStorage.setItem("claudeApiKey", key);
   window.location.reload();
 };
 
