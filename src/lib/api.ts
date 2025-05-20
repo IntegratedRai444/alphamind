@@ -2,6 +2,7 @@ import { Agent, AgentMemory, CreateAgentRequest, TaskRequest, TaskResponse, Voic
 
 export const API_BASE_URL = localStorage.getItem("mcpApiUrl") || "http://localhost:8000";
 export const CLAUDE_API_KEY = localStorage.getItem("claudeApiKey") || "";
+export const ELEVENLABS_API_KEY = localStorage.getItem("elevenLabsApiKey") || "";
 
 export const setApiBaseUrl = (url: string) => {
   localStorage.setItem("mcpApiUrl", url);
@@ -10,6 +11,11 @@ export const setApiBaseUrl = (url: string) => {
 
 export const setClaudeApiKey = (key: string) => {
   localStorage.setItem("claudeApiKey", key);
+  window.location.reload();
+};
+
+export const setElevenLabsApiKey = (key: string) => {
+  localStorage.setItem("elevenLabsApiKey", key);
   window.location.reload();
 };
 
@@ -105,7 +111,16 @@ export const runTask = async (taskData: TaskRequest): Promise<TaskResponse> => {
 };
 
 export const fetchAvailableVoices = async (provider: string): Promise<VoiceResponse> => {
-  const response = await fetch(`${API_BASE_URL}/available_voices/${provider}`);
+  const headers: HeadersInit = new Headers();
+  
+  if (provider === "elevenlabs") {
+    headers.set("xi-api-key", ELEVENLABS_API_KEY);
+  }
+  
+  const response = await fetch(`${API_BASE_URL}/available_voices/${provider}`, {
+    headers
+  });
+  
   if (!response.ok) {
     throw new Error(`Failed to fetch voices: ${response.statusText}`);
   }

@@ -1,7 +1,6 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createAgent, fetchAvailableVoices } from "@/lib/api";
+import { createAgent, fetchAvailableVoices, CLAUDE_API_KEY, ELEVENLABS_API_KEY } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +40,7 @@ const CreateAgent = () => {
   const [voiceId, setVoiceId] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
   const [activeTab, setActiveTab] = useState("templates");
+  const [apiKeyPromptShown, setApiKeyPromptShown] = useState(false);
   
   // Template categories
   const categories = [
@@ -137,7 +137,7 @@ const CreateAgent = () => {
   const { data: claudeVoices, isLoading: isLoadingClaudeVoices } = useQuery({
     queryKey: ["elevenlabs-voices"],
     queryFn: () => fetchAvailableVoices("elevenlabs"),
-    enabled: voiceProvider === "elevenlabs",
+    enabled: voiceProvider === "elevenlabs" && ELEVENLABS_API_KEY !== "",
   });
   
   const { data: openaiVoices, isLoading: isLoadingOpenAiVoices } = useQuery({
@@ -156,6 +156,17 @@ const CreateAgent = () => {
       toast.error(`Failed to create agent: ${error.message}`);
     },
   });
+  
+  // Check if API keys are set
+  useEffect(() => {
+    if (!CLAUDE_API_KEY && !apiKeyPromptShown) {
+      toast.warning("Claude API key not set", {
+        description: "Please set your Claude API key in the AI Assistant panel",
+        duration: 5000,
+      });
+      setApiKeyPromptShown(true);
+    }
+  }, [apiKeyPromptShown]);
   
   const handleTemplateSelect = (template: AgentTemplate) => {
     setSelectedTemplate(template);
@@ -203,6 +214,22 @@ const CreateAgent = () => {
       return;
     }
     
+    // Check if Claude API key is set when using Claude
+    if (llmProvider === "claude" && !CLAUDE_API_KEY) {
+      toast.error("Claude API key is not set", {
+        description: "Please set your Claude API key in the AI Assistant panel",
+      });
+      return;
+    }
+    
+    // Check if ElevenLabs API key is set when using ElevenLabs voice
+    if (voiceProvider === "elevenlabs" && !ELEVENLABS_API_KEY) {
+      toast.error("ElevenLabs API key is not set", {
+        description: "Please set your ElevenLabs API key in the AI Assistant panel",
+      });
+      return;
+    }
+    
     const agentData: CreateAgentRequest = {
       name,
       role,
@@ -224,6 +251,17 @@ const CreateAgent = () => {
   const handleVoiceProviderChange = (value: string) => {
     // Type assertion to ensure value matches the state type
     setVoiceProvider(value as "" | "elevenlabs" | "openai");
+    
+    // Reset voice ID when provider changes
+    setVoiceId("");
+    
+    // Check if ElevenLabs API key is set when selecting that provider
+    if (value === "elevenlabs" && !ELEVENLABS_API_KEY) {
+      toast.warning("ElevenLabs API key not set", {
+        description: "Please set your ElevenLabs API key in the AI Assistant panel",
+        duration: 5000,
+      });
+    }
   };
   
   return (
