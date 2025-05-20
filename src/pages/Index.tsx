@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Brain, Settings, Plus, Server } from "lucide-react";
+import { Brain, Settings, Plus, Server, Bot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_BASE_URL, fetchAgents, fetchServerStatus, setApiBaseUrl } from "@/lib/api";
 import { Agent } from "@/types/agent";
@@ -10,6 +10,9 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ThreeDScene from "@/components/ThreeDScene";
+import AssistantHelper from "@/components/AssistantHelper";
+import DeveloperCard from "@/components/DeveloperCard";
 
 const Index = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -51,11 +54,29 @@ const Index = () => {
   const handleSaveSettings = () => {
     setApiBaseUrl(apiUrl);
     setShowSettingsDialog(false);
+    toast.success("API URL updated! Reconnecting to server...");
+    // Reload data with new API URL
+    setLoading(true);
+    const loadData = async () => {
+      try {
+        const serverStatus = await fetchServerStatus();
+        setServerInfo(serverStatus);
+        const agentsData = await fetchAgents();
+        setAgents(agentsData);
+        toast.success(`Connected to ${serverStatus.name} v${serverStatus.version}`);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+        toast.error("Failed to connect to MCP Server. Please check your API URL.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Advanced MCP Dashboard</h1>
           <p className="text-gray-500">
@@ -76,6 +97,36 @@ const Index = () => {
         </div>
       </div>
 
+      {/* 3D Hero Section */}
+      <Card className="mb-8 overflow-hidden border-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
+        <div className="flex flex-col lg:flex-row">
+          <div className="p-8 lg:w-1/2 flex flex-col justify-center">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-transparent bg-clip-text">
+              Advanced AI Agent Platform
+            </h2>
+            <p className="text-gray-500 mb-6 text-lg">
+              Create powerful AI agents powered by Claude and OpenAI models with full customization of capabilities and integrations.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button onClick={handleCreateAgent} size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+                <Bot className="h-5 w-5 mr-2" /> Create Your First Agent
+              </Button>
+              <Button onClick={() => setShowSettingsDialog(true)} variant="outline" size="lg">
+                <Server className="h-5 w-5 mr-2" /> Configure Server
+              </Button>
+            </div>
+          </div>
+          <div className="lg:w-1/2">
+            <ThreeDScene />
+          </div>
+        </div>
+      </Card>
+
+      {/* Developer Card */}
+      <div className="mb-8">
+        <DeveloperCard />
+      </div>
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <span className="loader"></span>
@@ -94,41 +145,44 @@ const Index = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.map((agent) => (
-            <Card key={agent.agent_id} className="agent-card">
-              <CardHeader>
-                <CardTitle>{agent.name}</CardTitle>
-                <CardDescription>{agent.role}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Model:</span>
-                    <span className="text-sm text-gray-500">{agent.llm_model}</span>
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Your AI Agents</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {agents.map((agent) => (
+              <Card key={agent.agent_id} className="agent-card hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle>{agent.name}</CardTitle>
+                  <CardDescription>{agent.role}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Model:</span>
+                      <span className="text-sm text-gray-500">{agent.llm_model}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Provider:</span>
+                      <span className="text-sm text-gray-500">{agent.llm_provider}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Voice:</span>
+                      <span className="text-sm text-gray-500">
+                        {agent.voice_provider ? `${agent.voice_provider} (${agent.voice_id})` : "None"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Provider:</span>
-                    <span className="text-sm text-gray-500">{agent.llm_provider}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Voice:</span>
-                    <span className="text-sm text-gray-500">
-                      {agent.voice_provider ? `${agent.voice_provider} (${agent.voice_id})` : "None"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleViewAgent(agent.agent_id)}
-                >
-                  Chat with Agent
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleViewAgent(agent.agent_id)}
+                  >
+                    Chat with Agent
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
@@ -167,6 +221,9 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Assistant Helper */}
+      <AssistantHelper />
     </div>
   );
 };

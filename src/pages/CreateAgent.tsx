@@ -37,7 +37,7 @@ const CreateAgent = () => {
   const [systemPrompt, setSystemPrompt] = useState("");
   const [llmProvider, setLlmProvider] = useState<"claude" | "openai">("claude");
   const [llmModel, setLlmModel] = useState("");
-  const [voiceProvider, setVoiceProvider] = useState<"elevenlabs" | "openai" | "">("");
+  const [voiceProvider, setVoiceProvider] = useState<"" | "elevenlabs" | "openai">("");
   const [voiceId, setVoiceId] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
   const [activeTab, setActiveTab] = useState("templates");
@@ -219,6 +219,12 @@ const CreateAgent = () => {
   const getFilteredTemplates = (category: string) => {
     return agentTemplates.filter(template => template.category === category);
   };
+
+  // Fixed type error by providing a correct handler for onValueChange
+  const handleVoiceProviderChange = (value: string) => {
+    // Type assertion to ensure value matches the state type
+    setVoiceProvider(value as "" | "elevenlabs" | "openai");
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -394,7 +400,10 @@ const CreateAgent = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="voice-provider">Voice Provider (Optional)</Label>
-                    <Select value={voiceProvider} onValueChange={setVoiceProvider}>
+                    <Select 
+                      value={voiceProvider} 
+                      onValueChange={handleVoiceProviderChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="No voice" />
                       </SelectTrigger>
